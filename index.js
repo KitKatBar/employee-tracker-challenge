@@ -1,5 +1,6 @@
 const inquirer = require('inquirer');
-const { connect } = require('./server.js');
+const { connect, viewAllEmployees, addEmployee, updateEmployeeRole,
+    viewAllRoles, addRole, viewAllDepartments, addDepartment } = require('./server.js');
 
 const options = [
     {
@@ -19,10 +20,8 @@ const options = [
     }
 ]
 
-async function init() {
+function init() {
     connect();
-
-    let ask = true;
     
     console.log(',----------------------------------------------------.\n' +
                 '|                                                    |\n' +
@@ -41,35 +40,45 @@ async function init() {
                 '|                                                    |\n' +
                 '`----------------------------------------------------\'');
 
-    while (ask) {
-        await inquirer.prompt(options)
-        .then((response) => {
-            ask = query(response.choice);
-        });
-    }
+    menu();
+}
 
-    process.exit();
+function menu() {
+    inquirer.prompt(options)
+    .then((response) => {
+        query(response.choice);
+    });
 }
 
 function query(response) {
-    console.log(response);
     switch(response) {
         case "View All Employees":
-            return true;
+            viewAllEmployees();
+            menu();
+            break;
         case "Add Employee":
-            return true;
+            menu();
+            break;
         case "Update Employee Role":
-            return true;
+            menu();
+            break;
         case "View All Roles":
-            return true;
+            viewAllRoles();
+            menu();
+            break;
         case "Add Role":
-            return true;
+            menu();
+            break;
         case "View All Departments":
-            return true;
+            viewAllDepartments();
+            menu();
+            break;
         case "Add Department":
-            return true;
+            addDepartment();
+            menu();
+            break;
         case "Quit":
-            return false;
+            process.exit();
     }
 }
 
