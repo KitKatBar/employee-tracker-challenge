@@ -1,5 +1,5 @@
 const inquirer = require('inquirer');
-const { connect } = require('./config.js');
+const { connect } = require('./config/config.js');
 const { menu } = require('./query.js');
 // const { viewAllEmployees, addEmployee, updateEmployeeRole,
 //     viewAllRoles, addRole, viewAllDepartments, addDepartment } = require('./query.js');

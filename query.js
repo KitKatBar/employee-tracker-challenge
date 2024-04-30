@@ -1,5 +1,5 @@
 const inquirer = require('inquirer');
-const { pool } = require('./config.js');
+const { pool } = require('./config/config.js');
 
 function menu() {
     const options = [
