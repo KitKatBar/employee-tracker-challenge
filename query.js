@@ -155,12 +155,9 @@ function viewAllEmployees() {
     pool.query(`SELECT employee.id, employee.first_name, employee.last_name,
                 role.title, department.name AS department, role.salary,
                 CONCAT(manager.first_name, ' ', manager.last_name) AS manager FROM department
-                JOIN role
-                ON role.department_id = department.id
-                JOIN employee
-                ON employee.role_id = role.id
-                LEFT JOIN employee manager
-                ON employee.manager_id = manager.id
+                JOIN role ON role.department_id = department.id
+                JOIN employee ON employee.role_id = role.id
+                LEFT JOIN employee manager ON employee.manager_id = manager.id
                 ORDER BY employee.id`, (err, { rows }) => {
         if (err) {
             console.log(err);
@@ -293,7 +290,7 @@ function updateEmployeeRole() {
                         console.log(err);
                     }
 
-                    console.log(`Updated role of employee '${response.firstName} ${response.lastName}' ...`);
+                    console.log(`Updated role of employee ...`);
                     menu();
                 });
             });
@@ -335,7 +332,7 @@ function updateEmployeeManager() {
         inquirer.prompt(questionOne)
         .then((responseOne) => {
             pool.query(`SELECT id, CONCAT(employee.first_name, ' ', employee.last_name) AS manager
-                FROM employee`, (err, { rows }) => {
+                        FROM employee`, (err, { rows }) => {
                 for (let i = 0; i < rows.length; i++) {
                     const manager = {
                         value: rows[i].id,
@@ -374,11 +371,94 @@ function updateEmployeeManager() {
 }
 
 function viewEmployeesByManager() {
-    menu();
+    const managers = [];
+
+    pool.query(`SELECT id, CONCAT(employee.first_name, ' ', employee.last_name) AS manager
+                FROM employee`, (err, { rows }) => {
+        for (let i = 0; i < rows.length; i++) {
+            const manager = {
+                value: rows[i].id,
+                name: rows[i].manager
+            };
+            
+            managers.push(manager);
+        }
+
+        const questions = [
+            {
+                type: "list",
+                message: "Which manager do you want to view?",
+                name: "manager",
+                choices: managers
+            }
+        ];
+
+        inquirer.prompt(questions)
+        .then((response) => {
+            pool.query(`SELECT * FROM employee WHERE manager_id = $1
+                        ORDER BY employee.id`,
+                        [response.manager], (err, { rows }) => {
+                if (err) {
+                    console.log(err);
+                }
+
+                if (rows.length === 0) {
+                    console.log('This manager has no employees that report to them ...')
+                }
+
+                else {
+                    console.log('Displaying all the employees that report to this manager ...');
+                    console.table(rows);
+                    menu();
+                }
+            });
+        });
+    });
 }
 
 function viewEmployeesByDepartment() {
-    menu();
+    const departments = [];
+
+    pool.query(`SELECT * FROM department`, (err, { rows }) => {
+        for (let i = 0; i < rows.length; i++) {
+            const department = {
+                value: rows[i].id,
+                name: rows[i].name
+            };
+
+            departments.push(department);
+        }
+
+        const questions = [
+            {
+                type: "list",
+                message: "Which department do you want to view?",
+                name: "department",
+                choices: departments
+            }
+        ];
+
+        inquirer.prompt(questions)
+        .then((response) => {
+            pool.query(`SELECT employee.id, employee.first_name, employee.last_name,
+                        role.title, department.name AS department, role.salary,
+                        CONCAT(manager.first_name, ' ', manager.last_name) AS manager FROM department
+                        JOIN role ON role.department_id = department.id
+                        JOIN employee ON employee.role_id = role.id
+                        LEFT JOIN employee manager ON employee.manager_id = manager.id
+                        WHERE department.id = $1
+                        ORDER BY employee.id`,
+                        [response.department], (err, { rows }) => {
+                if (err) {
+                    console.log(err);
+                }
+
+                console.log('Displaying all the employees in this department ...');
+                console.table(rows);
+                menu();
+            });
+        });
+    });
 }
 
 function deleteEmployee() {
@@ -421,8 +501,7 @@ function deleteEmployee() {
 
 function viewAllRoles() {
     pool.query(`SELECT role.id, role.title, department.name AS department, role.salary FROM department
-                LEFT JOIN role
-                ON role.department_id = department.id
+                LEFT JOIN role ON role.department_id = department.id
                 ORDER BY role.id`, (err, { rows }) => {
         if (err) {
             console.log(err);
@@ -552,7 +631,44 @@ function addDepartment() {
 }
 
 function viewDepartmentBudget() {
-    menu();
+    const departments = [];
+
+    pool.query(`SELECT * FROM department`, (err, { rows }) => {
+        for (let i = 0; i < rows.length; i++) {
+            const department = {
+                value: rows[i].id,
+                name: rows[i].name
+            };
+
+            departments.push(department);
+        }
+
+        const questions = [
+            {
+                type: "list",
+                message: "Which department's budget do you want to view?",
+                name: "department",
+                choices: departments
+            },
+        ];
+
+        inquirer.prompt(questions)
+        .then((response) => {
+            pool.query(`SELECT department.id, department.name, SUM(role.salary) AS department_budget
+                        FROM department
+                        LEFT JOIN role ON role.department_id = department.id
+                        WHERE department.id = $1
+                        GROUP BY department.id`,
+                    [response.department], (err, { rows }) => {
+                if (err) {
+                    console.log(err);
+                }
+
+                console.table(rows);
+                menu();
+            });
+        });
+    });
 }
 
 function deleteDepartment() {
@@ -571,7 +687,7 @@ function deleteDepartment() {
         const questions = [
             {
                 type: "list",
-                message: "Which role do you want to delete?",
+                message: "Which department do you want to delete?",
                 name: "department",
                 choices: departments
             },
@@ -584,7 +700,7 @@ function deleteDepartment() {
                 if (err) {
                     console.log(err);
                 }
-                console.log(response);
+
                 console.log(`Deleted department from the database ...`);
                 menu();
             });
