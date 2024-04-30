@@ -1,31 +1,6 @@
 const inquirer = require('inquirer');
 const { pool } = require('./config.js');
 
-// function menu() {
-//     const options = [
-//         {
-//             type: "list",
-//             message: "What would you like to do?",
-//             name: "choice",
-//             choices: [
-//                 "View All Employees",
-//                 "Add Employee",
-//                 "Update Employee Role",
-//                 "View All Roles",
-//                 "Add Role",
-//                 "View All Departments",
-//                 "Add Department",
-//                 "Quit"
-//             ]
-//         }
-//     ]
-
-//     inquirer.prompt(options)
-//     .then((response) => {
-//         query(response.choice);
-//     });
-// }
-
 function menu() {
     const options = [
         {
@@ -39,7 +14,7 @@ function menu() {
                 "Quit"
             ]
         }
-    ]
+    ];
 
     inquirer.prompt(options)
     .then((response) => {
@@ -64,7 +39,7 @@ function employeeMenu() {
                 "Return to Main Menu"
             ]
         }
-    ]
+    ];
 
     inquirer.prompt(options)
     .then((response) => {
@@ -85,7 +60,7 @@ function roleMenu() {
                 "Return to Main Menu"
             ]
         }
-    ]
+    ];
 
     inquirer.prompt(options)
     .then((response) => {
@@ -107,7 +82,7 @@ function departmentMenu() {
                 "Return to Main Menu"
             ]
         }
-    ]
+    ];
 
     inquirer.prompt(options)
     .then((response) => {
@@ -120,42 +95,56 @@ function query(response) {
         case "Employee Operations":
             employeeMenu();
             break;
+        case "View All Employees":
+            viewAllEmployees();
+            break;
+        case "Add Employee":
+            addEmployee();
+            break;
+        case "Update Employee Role":
+            updateEmployeeRole();
+            break;
+        case "Update Employee Manager":
+            updateEmployeeManager();
+            break;
+        case "View Employees by Manager":
+            viewEmployeesByManager();
+            break;
+        case "View Employees by Department":
+            viewEmployeesByDepartment();
+            break;
+        case "Delete Employee":
+            deleteEmployee();
+            break;
         case "Role Operations":
             roleMenu();
+            break;
+        case "View All Roles":
+            viewAllRoles();
+            break;
+        case "Add Role":
+            addRole();
+            break;
+        case "Delete Role":
+            deleteRole();
             break;
         case "Department Operations":
             departmentMenu();
             break;
-        case "Return to Main Menu":
-            menu();
-            break;
-        case "View All Employees":
-            viewAllEmployees();
-            //menu();
-            break;
-        case "Add Employee":
-            addEmployee();
-            //menu();
-            break;
-        case "Update Employee Role":
-            updateEmployeeRole();
-            //menu();
-            break;
-        case "View All Roles":
-            viewAllRoles();
-            //menu();
-            break;
-        case "Add Role":
-            addRole();
-            //menu();
-            break;
         case "View All Departments":
             viewAllDepartments();
-            //menu();
             break;
         case "Add Department":
             addDepartment();
-            //menu();
+            break;
+        case "View Department Budget":
+            viewDepartmentBudget();
+            break;
+        case "Delete Department":
+            deleteDepartment();
+            break;
+        case "Return to Main Menu":
+            menu();
             break;
         case "Quit":
             process.exit();
@@ -171,12 +160,12 @@ function viewAllEmployees() {
                 JOIN employee
                 ON employee.role_id = role.id
                 LEFT JOIN employee manager
-                ON employee.manager_id = manager.id`, (err, { rows }) => {
+                ON employee.manager_id = manager.id
+                ORDER BY employee.id`, (err, { rows }) => {
         if (err) {
             console.log(err);
         }
 
-        //console.log('\n');
         console.table(rows);
         menu();
     });
@@ -189,7 +178,7 @@ function addEmployee() {
     const none = {
         value: null,
         name: "None"
-    }
+    };
 
     managers.push(none);
 
@@ -199,7 +188,7 @@ function addEmployee() {
             const manager = {
                 value: rows[i].id,
                 name: rows[i].manager
-            }
+            };
             
             managers.push(manager);
         }
@@ -210,7 +199,7 @@ function addEmployee() {
             const role = {
                 value: rows[i].id,
                 name: rows[i].title
-            }
+            };
             
             roles.push(role);
         }
@@ -250,7 +239,7 @@ function addEmployee() {
                 console.log(err);
             }
 
-            console.log(`The employee '${response.firstName} ${response.lastName}' was added to the database ...`);
+            console.log(`Employee '${response.firstName} ${response.lastName}' was added to the database ...`);
             menu();
         });
     });
@@ -266,7 +255,7 @@ function updateEmployeeRole() {
             const employee = {
                 value: rows[i].id,
                 name: rows[i].employee
-            }
+            };
             
             employees.push(employee);
         }
@@ -276,7 +265,7 @@ function updateEmployeeRole() {
                 const role = {
                     value: rows[i].id,
                     name: rows[i].title
-                }
+                };
                 
                 roles.push(role);
             }
@@ -304,9 +293,127 @@ function updateEmployeeRole() {
                         console.log(err);
                     }
 
-                    console.log(`Updated role of '${response.firstName} ${response.lastName}' ...`);
+                    console.log(`Updated role of employee '${response.firstName} ${response.lastName}' ...`);
                     menu();
                 });
+            });
+        });
+    });
+}
+
+function updateEmployeeManager() {
+    const employees = [];
+    const managers = [];
+
+    const none = {
+        value: null,
+        name: "None"
+    };
+
+    managers.push(none);
+
+    pool.query(`SELECT id, CONCAT(employee.first_name, ' ', employee.last_name) AS employee
+                FROM employee`, (err, { rows }) => {
+        for (let i = 0; i < rows.length; i++) {
+            const employee = {
+                value: rows[i].id,
+                name: rows[i].employee
+            };
+            
+            employees.push(employee);
+        }
+
+        const questionOne = [
+            {
+                type: "list",
+                message: "Which employee's manager do you want to update?",
+                name: "employee",
+                choices: employees
+            },
+        ];
+
+        inquirer.prompt(questionOne)
+        .then((responseOne) => {
+            pool.query(`SELECT id, CONCAT(employee.first_name, ' ', employee.last_name) AS manager
+                FROM employee`, (err, { rows }) => {
+                for (let i = 0; i < rows.length; i++) {
+                    const manager = {
+                        value: rows[i].id,
+                        name: rows[i].manager
+                    };
+                    
+                    if (responseOne.employee !== manager.value) {
+                        managers.push(manager);
+                    }
+                }
+
+                const questionTwo = [
+                    {
+                        type: "list",
+                        message: "Who is the employee's manager?",
+                        name: "manager",
+                        choices: managers
+                    },
+                ];
+
+                inquirer.prompt(questionTwo)
+                .then((responseTwo) => {
+                    pool.query(`UPDATE employee SET manager_id = $1 WHERE id = $2`,
+                            [responseTwo.manager, responseOne.employee], (err) => {
+                        if (err) {
+                            console.log(err);
+                        }
+
+                        console.log(`Updated manager of employee ...`);
+                        menu();
+                    });
+                })
+            });
+        });
+    });
+}
+
+function viewEmployeesByManager() {
+    menu();
+}
+
+function viewEmployeesByDepartment() {
+    menu();
+}
+
+function deleteEmployee() {
+    const employees = [];
+
+    pool.query(`SELECT id, CONCAT(employee.first_name, ' ', employee.last_name) AS employee
+                FROM employee`, (err, { rows }) => {
+        for (let i = 0; i < rows.length; i++) {
+            const employee = {
+                value: rows[i].id,
+                name: rows[i].employee
+            };
+            
+            employees.push(employee);
+        }
+
+        const questions = [
+            {
+                type: "list",
+                message: "Which employee do you want to delete?",
+                name: "employee",
+                choices: employees
+            },
+        ];
+
+        inquirer.prompt(questions)
+        .then((response) => {
+            pool.query(`DELETE FROM employee WHERE id = $1`,
+                    [response.employee], (err) => {
+                if (err) {
+                    console.log(err);
+                }
+
+                console.log(`Deleted employee from the database ...`);
+                menu();
             });
         });
     });
@@ -315,12 +422,12 @@ function updateEmployeeRole() {
 function viewAllRoles() {
     pool.query(`SELECT role.id, role.title, department.name AS department, role.salary FROM department
                 LEFT JOIN role
-                ON role.department_id = department.id`, (err, { rows }) => {
+                ON role.department_id = department.id
+                ORDER BY role.id`, (err, { rows }) => {
         if (err) {
             console.log(err);
         }
 
-        //console.log('\n');
         console.table(rows);
         menu();
     });
@@ -331,12 +438,12 @@ function addRole() {
 
     pool.query(`SELECT * FROM department`, (err, { rows }) => {
         for (let i = 0; i < rows.length; i++) {
-            const role = {
+            const department = {
                 value: rows[i].id,
                 name: rows[i].name
-            }
+            };
 
-            departments.push(role);
+            departments.push(department);
         }
     });
 
@@ -373,14 +480,49 @@ function addRole() {
     });
 }
 
+function deleteRole() {
+    const roles = [];
+
+    pool.query(`SELECT id, title FROM role`, (err, { rows }) => {
+        for (let i = 0; i < rows.length; i++) {
+            const role = {
+                value: rows[i].id,
+                name: rows[i].title
+            }
+            
+            roles.push(role);
+        }
+        const questions = [
+            {
+                type: "list",
+                message: "Which role do you want to delete?",
+                name: "role",
+                choices: roles
+            },
+        ];
+
+        inquirer.prompt(questions)
+        .then((response) => {
+            pool.query(`DELETE FROM role WHERE id = $1`,
+                    [response.role], (err) => {
+                if (err) {
+                    console.log(err);
+                }
+
+                console.log(`Deleted role from the database ...`);
+                menu();
+            });
+        });
+    });
+}
+
 function viewAllDepartments() {
     pool.query(`SELECT * FROM department
-                ORDER BY department.name`, (err, { rows }) => {
+                ORDER BY department.id`, (err, { rows }) => {
         if (err) {
             console.log(err);
         }
 
-        //console.log('\n');
         console.table(rows);
         menu();
     });
@@ -409,68 +551,45 @@ function addDepartment() {
     });
 }
 
-function updateEmployeeManager() {
-
+function viewDepartmentBudget() {
+    menu();
 }
 
-function viewEmployeesByManager() {
+function deleteDepartment() {
+    const departments = [];
 
-}
-
-function viewEmployeesByDepartment() {
-
-}
-
-function deleteEmployee() {
-    const employees = [];
-
-    pool.query(`SELECT id, CONCAT(employee.first_name, ' ', employee.last_name) AS employee
-                FROM employee`, (err, { rows }) => {
+    pool.query(`SELECT * FROM department`, (err, { rows }) => {
         for (let i = 0; i < rows.length; i++) {
-            const employee = {
+            const department = {
                 value: rows[i].id,
-                name: rows[i].employee
-            }
-            
-            employees.push(employee);
+                name: rows[i].name
+            };
+
+            departments.push(department);
         }
 
         const questions = [
             {
                 type: "list",
-                message: "Which employee's role do you want to delete?",
-                name: "employee",
-                choices: employees
+                message: "Which role do you want to delete?",
+                name: "department",
+                choices: departments
             },
         ];
 
         inquirer.prompt(questions)
         .then((response) => {
-            pool.query(`UPDATE employee SET role_id = $1 WHERE id = $2`,
-                    [response.role, response.employee], (err) => {
+            pool.query(`DELETE FROM department WHERE id = $1`,
+                    [response.department], (err) => {
                 if (err) {
                     console.log(err);
                 }
-
-                console.log(`Updated role of '${response.firstName} ${response.lastName}' ...`);
+                console.log(response);
+                console.log(`Deleted department from the database ...`);
                 menu();
             });
         });
     });
 }
 
-function deleteRole() {
-
-}
-
-function deleteDepartment() {
-
-}
-
-function viewDepartmentBudget() {
-
-}
-
 module.exports = { menu };
-// module.exports = { viewAllEmployees, addEmployee, updateEmployeeRole,
-//      viewAllRoles, addRole, viewAllDepartments, addDepartment };
