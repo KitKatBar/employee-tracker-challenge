@@ -1,6 +1,10 @@
+// Import and require Pool (node-postgres)
+// We'll be creating a Connection Pool. Read up on the benefits here: https://node-postgres.com/features/pooling
 const { Pool } = require('pg');
+// Using dotenv to configure our sensitive variables
 require('dotenv').config();
 
+// Connection properties
 const pool = new Pool(
     {
         user: process.env.DB_USER,
@@ -11,9 +15,12 @@ const pool = new Pool(
     console.log(`Connected to the employees_db database.`)
 )
 
+// Function to connect to the database and display ASCII art
 function connect() {
+    // Connect to database
     pool.connect();
 
+    // Replicated the display from the mock-up
     console.log(',----------------------------------------------------.\n' +
                 '|                                                    |\n' +
                 '|    _____                 _                         |\n' +
@@ -32,4 +39,5 @@ function connect() {
                 '`----------------------------------------------------\'');
 }
 
+// Export our properties and function
 module.exports = { pool, connect };

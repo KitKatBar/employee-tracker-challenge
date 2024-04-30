@@ -1,13 +1,17 @@
+-- Create our database
 DROP DATABASE IF EXISTS employees_db;
 CREATE DATABASE employees_db;
 
+-- Select our database
 \c employees_db;
 
+-- Create a table for department with the appropriate columns
 CREATE TABLE department (
     id SERIAL PRIMARY KEY,
     name VARCHAR(30) UNIQUE NOT NULL
 );
 
+-- Create a table for role with the appropriate columns
 CREATE TABLE role (
     id SERIAL PRIMARY KEY,
     title VARCHAR(30) UNIQUE NOT NULL,
@@ -18,6 +22,7 @@ CREATE TABLE role (
     ON DELETE SET NULL
 );
 
+-- Create a table for employee with the appropriate columns
 CREATE TABLE employee (
     id SERIAL PRIMARY KEY,
     first_name VARCHAR(30) NOT NULL,
